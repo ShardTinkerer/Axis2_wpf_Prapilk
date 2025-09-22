@@ -25,6 +25,7 @@ namespace Axis2.WPF.Models
         private string _displayId = "";
         private string _color = "0";
         private string _dupeItem = "";
+        private string _dupeList = ""; // New property for DUPELIST
         private string _fileName = "";
         private string _explicitDefName = "";
         private string _scriptType = ""; // New property for script-defined TYPE
@@ -38,6 +39,7 @@ namespace Axis2.WPF.Models
         public string DisplayId { get => _displayId; set { _displayId = value; OnPropertyChanged(nameof(DisplayId)); } }
         public string Color { get => _color; set { _color = value; OnPropertyChanged(nameof(Color)); } }
         public string DupeItem { get => _dupeItem; set { _dupeItem = value; OnPropertyChanged(nameof(DupeItem)); } }
+        public string DupeList { get => _dupeList; set { _dupeList = value; OnPropertyChanged(nameof(DupeList)); } } // New public property
         public string FileName { get => _fileName; set { _fileName = value; OnPropertyChanged(nameof(FileName)); } }
         public string ExplicitDefName { get => _explicitDefName; set { _explicitDefName = value; OnPropertyChanged(nameof(ExplicitDefName)); } }
         public string ScriptType { get => _scriptType; set { _scriptType = value; OnPropertyChanged(nameof(ScriptType)); } } // New public property
@@ -65,6 +67,7 @@ namespace Axis2.WPF.Models
                 DisplayId = this.DisplayId,
                 Color = this.Color,
                 DupeItem = this.DupeItem,
+                DupeList = this.DupeList, // Clone DupeList
                 FileName = this.FileName,
                 ExplicitDefName = this.ExplicitDefName,
                 Type = this.Type

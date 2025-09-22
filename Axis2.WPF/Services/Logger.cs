@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Axis2.WPF.Models; // Import the models
 
 namespace Axis2.WPF.Services
 {
@@ -7,7 +8,7 @@ namespace Axis2.WPF.Services
     {
         private static readonly string logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "axis2_wpf_debug.log");
         private static readonly object _lock = new object();
-        public static event Action<string> OnLogMessage;
+        public static event Action<LogEntry> OnLogMessage; // Changed to LogEntry
 
         public static void Init()
         {
@@ -20,14 +21,20 @@ namespace Axis2.WPF.Services
 
         public static void Log(string message)
         {
+            Log(LogSource.Unknown, message);
+        }
+
+        // Changed to accept a LogSource
+        public static void Log(LogSource source, string message)
+        {
             try
             {
-                var formattedMessage = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] {message}";
+                var logEntry = new LogEntry(source, message);
                 lock (_lock)
                 {
-                    File.AppendAllText(logFilePath, formattedMessage + "\n");
+                    File.AppendAllText(logFilePath, logEntry.FormattedMessage + "\n");
                 }
-                OnLogMessage?.Invoke(formattedMessage);
+                OnLogMessage?.Invoke(logEntry);
             }
             catch { /* Ignore */ }
         }

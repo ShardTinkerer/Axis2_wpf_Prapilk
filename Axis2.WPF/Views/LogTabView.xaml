@@ -3,10 +3,66 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:Axis2.WPF.Views"
+             xmlns:viewModels="clr-namespace:Axis2.WPF.ViewModels"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
-    <Grid>
-        <ListBox ItemsSource="{Binding LogMessages}" ScrollViewer.VerticalScrollBarVisibility="Auto"/>
-    </Grid>
+             d:DesignHeight="450" d:DesignWidth="800"
+             d:DataContext="{d:DesignInstance viewModels:LogTabViewModel}">
+    <DockPanel>
+        <!-- Top Panel for Filters -->
+        <Border DockPanel.Dock="Top" Padding="5" BorderBrush="Gray" BorderThickness="0,0,0,1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Search Box -->
+                <DockPanel Grid.Row="0">
+                    <TextBlock Text="Search:" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                    <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
+                </DockPanel>
+
+                <!-- Source Filters -->
+                <GroupBox Header="Sources" Grid.Row="1" Margin="0,5,0,0">
+                    <ItemsControl ItemsSource="{Binding LogSources}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <CheckBox Content="{Binding Name}" IsChecked="{Binding IsSelected}" Margin="5"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </GroupBox>
+            </Grid>
+        </Border>
+
+        <!-- Log ListView -->
+        <ListView ItemsSource="{Binding LogMessagesView}"
+                  SelectionMode="Extended"
+                  VirtualizingStackPanel.IsVirtualizing="True"
+                  VirtualizingStackPanel.VirtualizationMode="Recycling">
+            
+            <ListView.InputBindings>
+                <KeyBinding Key="C" Modifiers="Ctrl" Command="{Binding CopyCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ListView}, Path=SelectedItems}"/>
+            </ListView.InputBindings>
+
+            <ListView.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Copy" Command="{Binding CopyCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItems}"/>
+                </ContextMenu>
+            </ListView.ContextMenu>
+
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="Timestamp" Width="120" DisplayMemberBinding="{Binding Timestamp, StringFormat='HH:mm:ss.fff'}"/>
+                    <GridViewColumn Header="Source" Width="100" DisplayMemberBinding="{Binding Source}"/>
+                    <GridViewColumn Header="Message" Width="500" DisplayMemberBinding="{Binding Message}"/>
+                </GridView>
+            </ListView.View>
+        </ListView>
+    </DockPanel>
 </UserControl>

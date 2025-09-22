@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization; // Added
 using Axis2.WPF.Models;
 
 namespace Axis2.WPF.Services
@@ -9,12 +10,18 @@ namespace Axis2.WPF.Services
     {
         private readonly string _profilesFilePath = "profiles.json";
 
+        private readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            ReferenceHandler = ReferenceHandler.Preserve // Added
+        };
+
         public ObservableCollection<Profile> LoadProfiles()
         {
             if (File.Exists(_profilesFilePath))
             {
                 string jsonString = File.ReadAllText(_profilesFilePath);
-                var profiles = JsonSerializer.Deserialize<ObservableCollection<Profile>>(jsonString);
+                var profiles = JsonSerializer.Deserialize<ObservableCollection<Profile>>(jsonString, _jsonSerializerOptions); // Use options
                 return profiles ?? new ObservableCollection<Profile>();
             }
             return new ObservableCollection<Profile>();
@@ -22,7 +29,7 @@ namespace Axis2.WPF.Services
 
         public void SaveProfiles(ObservableCollection<Profile> profiles)
         {
-            string jsonString = JsonSerializer.Serialize(profiles, new JsonSerializerOptions { WriteIndented = true });
+            string jsonString = JsonSerializer.Serialize(profiles, _jsonSerializerOptions); // Use options
             File.WriteAllText(_profilesFilePath, jsonString);
         }
     }

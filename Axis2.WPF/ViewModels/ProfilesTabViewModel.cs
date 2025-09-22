@@ -7,10 +7,11 @@ using Microsoft.Win32;
 using System.Linq;
 using System;
 using System.Windows.Interop;
+using System.Windows;
 
 namespace Axis2.WPF.ViewModels
 {
-    public class ProfilesTabViewModel : BindableBase
+    public class ProfilesTabViewModel : BindableBase, IHandler<ProfileLoadedEvent> // Add IHandler
     {
         private readonly ProfileService _profileService;
         private readonly EventAggregator _eventAggregator;
@@ -49,14 +50,21 @@ namespace Axis2.WPF.ViewModels
 
         private void SelectedProfile_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            if (sender is Profile changedProfile && e.PropertyName == nameof(Profile.IsDefault))
+            if (sender is Profile changedProfile)
             {
-                if (changedProfile.IsDefault)
+                if (e.PropertyName == nameof(Profile.IsDefault))
                 {
-                    foreach (var profile in Profiles.Where(p => p != changedProfile))
+                    if (changedProfile.IsDefault)
                     {
-                        profile.IsDefault = false;
+                        foreach (var profile in Profiles.Where(p => p != changedProfile))
+                        {
+                            profile.IsDefault = false;
+                        }
                     }
+                }
+                else if (e.PropertyName == nameof(Profile.BaseDirectory))
+                {
+                    LoadAvailableScripts();
                 }
             }
         }
@@ -77,6 +85,26 @@ namespace Axis2.WPF.ViewModels
         public ICommand BrowseDirectoryCommand { get; }
         public ICommand SaveScriptsCommand { get; }
 
+        private void SaveScripts(bool showMessageBox = true)
+        {
+            Logger.Log("DEBUG: SaveScripts method entered.");
+            if (SelectedProfile == null) return;
+
+            SelectedProfile.SelectedScripts.Clear();
+            foreach (var item in AvailableScripts)
+            {
+                GetSelections(item, SelectedProfile.SelectedScripts);
+            }
+            Logger.Log($"DEBUG: ProfilesTabViewModel - Scripts to save: {string.Join(", ", SelectedProfile.SelectedScripts.Select(s => s.Path))}");
+            _profileService.SaveProfiles(Profiles); // Save all profiles after script selection changes
+            Logger.Log($"DEBUG: ProfilesTabViewModel - Scripts saved for {SelectedProfile.Name}: {string.Join(", ", SelectedProfile.SelectedScripts.Select(s => s.Path))}");
+
+            if (showMessageBox)
+            {
+                System.Windows.MessageBox.Show("Selected scripts saved successfully!", "Save Selected Scripts", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
         public ProfilesTabViewModel(ProfileService profileService, EventAggregator eventAggregator, ObservableCollection<Profile> profiles, MainViewModel mainViewModel)
         {
             Logger.Log("DEBUG: ProfilesTabViewModel constructor entered.");
@@ -94,7 +122,9 @@ namespace Axis2.WPF.ViewModels
             LoadProfileCommand = new RelayCommand(LoadProfile, CanLoadProfile);
             ExportProfileCommand = new RelayCommand(ExportProfile, CanExportProfile);
             BrowseDirectoryCommand = new RelayCommand(BrowseDirectory);
-            SaveScriptsCommand = new RelayCommand(SaveScripts);
+            SaveScriptsCommand = new RelayCommand(() => SaveScripts(true));
+
+            _eventAggregator.Subscribe(this); // Add this line
         }
 
         // Method to set MainViewModel after it's fully constructed
@@ -136,12 +166,32 @@ namespace Axis2.WPF.ViewModels
         private void SaveProfile()
         {
             _profileService.SaveProfiles(Profiles);
+            System.Windows.MessageBox.Show("Profile saved successfully!", "Save Profile", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void SaveScripts()
+        {
+            Logger.Log("DEBUG: SaveScripts method entered.");
+            if (SelectedProfile == null) return;
+
+            SelectedProfile.SelectedScripts.Clear();
+            foreach (var item in AvailableScripts)
+            {
+                GetSelections(item, SelectedProfile.SelectedScripts);
+            }
+            Logger.Log($"DEBUG: ProfilesTabViewModel - Scripts to save: {string.Join(", ", SelectedProfile.SelectedScripts.Select(s => s.Path))}");
+            _profileService.SaveProfiles(Profiles); // Save all profiles after script selection changes
+            Logger.Log($"DEBUG: ProfilesTabViewModel - Scripts saved for {SelectedProfile.Name}: {string.Join(", ", SelectedProfile.SelectedScripts.Select(s => s.Path))}");
+            System.Windows.MessageBox.Show("Selected scripts saved successfully!", "Save Selected Scripts", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void CancelProfile()
         {
-            // Revert changes by reloading profiles (simple approach for now)
-            Profiles = _profileService.LoadProfiles();
+            if (System.Windows.MessageBox.Show("Are you sure you want to discard all changes to the profiles?", "Confirm Cancel", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+            {
+                // Revert changes by reloading profiles (simple approach for now)
+                Profiles = _profileService.LoadProfiles();
+            }
         }
 
         private bool CanLoadProfile()
@@ -154,7 +204,7 @@ namespace Axis2.WPF.ViewModels
             if (SelectedProfile == null) return;
 
             // First, save the current script selections to the profile object
-            SaveScripts();
+            SaveScripts(false); // Call with false to suppress MessageBox
 
             if (!SelectedProfile.IsWebProfile && string.IsNullOrEmpty(SelectedProfile.BaseDirectory))
             {
@@ -266,6 +316,9 @@ namespace Axis2.WPF.ViewModels
                         parentItem.Children.Add(scriptItem);
                     }
                 }
+
+                // After all children are added, update the parent's check state
+                parentItem.UpdateCheckState();
             }
             catch (System.Exception ex)
             {
@@ -276,7 +329,8 @@ namespace Axis2.WPF.ViewModels
 
         private void GetSelections(ScriptItem item, ObservableCollection<ScriptItem> selections)
         {
-            if (!item.IsFolder && item.IsSelected)
+            // Only add if it's a file and it's explicitly selected (not indeterminate)
+            if (!item.IsFolder && item.IsSelected == true)
             {
                 selections.Add(item);
             }
@@ -287,20 +341,21 @@ namespace Axis2.WPF.ViewModels
             }
         }
 
-        private void SaveScripts()
+        public void Handle(ProfileLoadedEvent message)
         {
-            Logger.Log("DEBUG: SaveScripts method entered.");
-            if (SelectedProfile == null) return;
+            if (message?.LoadedProfile == null) return;
 
-            SelectedProfile.SelectedScripts.Clear();
-            foreach (var item in AvailableScripts)
+            // Find the profile in the local collection and set it as selected
+            var profileToSelect = Profiles.FirstOrDefault(p => p.Name == message.LoadedProfile.Name);
+            if (profileToSelect != null)
             {
-                GetSelections(item, SelectedProfile.SelectedScripts);
+                SelectedProfile = profileToSelect;
+                _mainViewModel.StatusMessage = $"Profile '{profileToSelect.Name}' loaded.";
             }
-            Logger.Log($"DEBUG: ProfilesTabViewModel - Scripts to save: {string.Join(", ", SelectedProfile.SelectedScripts.Select(s => s.Path))}");
-            _profileService.SaveProfiles(Profiles); // Save all profiles after script selection changes
-            Logger.Log($"DEBUG: ProfilesTabViewModel - Scripts saved for {SelectedProfile.Name}: {string.Join(", ", SelectedProfile.SelectedScripts.Select(s => s.Path))}");
         }
+    }
+
+
     }
 
     public class Wpf32Window : System.Windows.Forms.IWin32Window
@@ -312,4 +367,3 @@ namespace Axis2.WPF.ViewModels
             Handle = new WindowInteropHelper(wpfWindow).Handle;
         }
     }
-}

@@ -61,7 +61,8 @@ namespace Axis2.WPF.ViewModels
             ItemTweakTabViewModel itemTweakTabViewModel, LauncherTabViewModel launcherTabViewModel,
             LogTabViewModel logTabViewModel, MiscTabViewModel miscTabViewModel,
             PlayerTweakTabViewModel playerTweakTabViewModel, ReminderTabViewModel reminderTabViewModel,
-            SpawnTabViewModel spawnTabViewModel)
+            SpawnTabViewModel spawnTabViewModel,
+            bool defaultProfileWasLoaded) // Add this parameter
         {
             _fileManager = fileManager;
             _animationManager = animationManager;
@@ -111,7 +112,10 @@ namespace Axis2.WPF.ViewModels
 
             ReloadServices();
 
-            StatusMessage = "Ready. Please load a profile.";
+            if (!defaultProfileWasLoaded)
+            {
+                StatusMessage = "Ready. Please load a profile.";
+            }
         }
 
         private void ReloadServices()

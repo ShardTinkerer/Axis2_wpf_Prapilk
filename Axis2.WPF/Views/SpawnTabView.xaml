@@ -10,6 +10,7 @@
              d:DesignHeight="450" d:DesignWidth="1200">
     <UserControl.Resources>
         <converters:IsSelectedPathConverter x:Key="IsSelectedPathConverter" />
+        <converters:ImageScaleConverter x:Key="ImageScaleConverter" />
     </UserControl.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
@@ -108,8 +109,27 @@
             <GroupBox Header="NPC View" Grid.Row="0">
                 <DockPanel>
                     <Slider DockPanel.Dock="Bottom" Minimum="0" Maximum="4" Value="{Binding Direction}" IsSnapToTickEnabled="True" TickFrequency="1"/>
-                    <Border BorderBrush="Black" BorderThickness="1" Height="150" Margin="5">
-                        <Image Source="{Binding ItemImage}"/>
+                    <Border x:Name="ImageBorder" BorderBrush="Black" BorderThickness="1" Height="150" Margin="5">
+                        <Image Source="{Binding ItemImage}" Stretch="None" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Image.LayoutTransform>
+                                <ScaleTransform>
+                                    <ScaleTransform.ScaleX>
+                                        <MultiBinding Converter="{StaticResource ImageScaleConverter}">
+                                            <Binding Path="ItemImage"/>
+                                            <Binding Path="ActualWidth" ElementName="ImageBorder"/>
+                                            <Binding Path="ActualHeight" ElementName="ImageBorder"/>
+                                        </MultiBinding>
+                                    </ScaleTransform.ScaleX>
+                                    <ScaleTransform.ScaleY>
+                                        <MultiBinding Converter="{StaticResource ImageScaleConverter}">
+                                            <Binding Path="ItemImage"/>
+                                            <Binding Path="ActualWidth" ElementName="ImageBorder"/>
+                                            <Binding Path="ActualHeight" ElementName="ImageBorder"/>
+                                        </MultiBinding>
+                                    </ScaleTransform.ScaleY>
+                                </ScaleTransform>
+                            </Image.LayoutTransform>
+                        </Image>
                     </Border>
                 </DockPanel>
             </GroupBox>

@@ -4,6 +4,7 @@ using Axis2.WPF.ViewModels;
 using Axis2.WPF.Models;
 using Axis2.WPF.Mvvm;
 using System.Linq;
+using System;
 
 namespace Axis2.WPF
 {
@@ -15,8 +16,10 @@ namespace Axis2.WPF
         private void Application_Startup(object sender, StartupEventArgs e)
         {
             Logger.Init();
+            Logger.Log(LogSource.Core, "Application starting...");
 
             // Services
+            Logger.Log(LogSource.Core, "Initializing services...");
             var settingsService = new SettingsService();
             var eventAggregator = new EventAggregator();
             var travelDataService = new TravelDataService();
@@ -30,7 +33,10 @@ namespace Axis2.WPF
             var musicService = new MusicService(); // Instantiate MusicService
             var soundService = new SoundService(); // Instantiate SoundService
 
+            Logger.Log(LogSource.Settings, "Loading settings...");
             var settings = settingsService.LoadSettings();
+            Logger.Log(LogSource.Settings, "Settings loaded.");
+
             var uoClientCommunicator = new UoClientCommunicator(settings.GeneralSettings.CommandPrefix, settings.GeneralSettings.UOTitle);
             var uoClient = new UoClient(uoClientCommunicator);
 
@@ -39,46 +45,73 @@ namespace Axis2.WPF
                 .Where(item => item.FileName.EndsWith(".uop", System.StringComparison.OrdinalIgnoreCase))
                 .ToDictionary(item => item.FileName, item => item.FilePath, System.StringComparer.OrdinalIgnoreCase);
 
-            Logger.Log("DEBUG: UOP File Paths:");
+            Logger.Log(LogSource.UOP, "UOP File Paths:");
             foreach (var entry in uopFilePaths)
             {
-                Logger.Log($"DEBUG:   {entry.Key} = {entry.Value}");
+                Logger.Log(LogSource.UOP, $"  {entry.Key} = {entry.Value}");
             }
             if (!uopFilePaths.Any())
             {
-                Logger.Log("WARNING: No UOP files found in settings.OverridePathsSettings.FilePaths.");
+                Logger.Log(LogSource.UOP, "WARNING: No UOP files found in settings.");
             }
 
             var fileManager = new FileManager(uopFilePaths);
             var animationManager = new AnimationManager(fileManager);
             try
             {
+                Logger.Log(LogSource.Animation, "Loading UOP animations...");
                 animationManager.LoadUOP();
+                Logger.Log(LogSource.Animation, "UOP animations loaded.");
             }
             catch (Exception ex)
             {
-                Logger.Log($"ERROR: Failed to load UOP animations: {ex.Message}");
+                Logger.Log(LogSource.Animation, $"ERROR: Failed to load UOP animations: {ex.Message}");
                 // Optionally, re-throw or handle the exception more gracefully
             }
             var bodyDefService = new BodyDefService();
+            // Load body.def and bodyconv.def
+            string defaultMulPath = settings.FilePathsSettings.DefaultMulPath;
+            string bodyDefPath = System.IO.Path.Combine(defaultMulPath, "body.def");
+            string bodyConvPath = System.IO.Path.Combine(defaultMulPath, "bodyconv.def");
+            Logger.Log(LogSource.Core, "Loading body definitions...");
+            bodyDefService.Load(bodyDefPath, bodyConvPath);
+            Logger.Log(LogSource.Core, "Body definitions loaded.");
+
             var mulFileManager = new MulFileManager(fileManager, animationManager, bodyDefService);
             var uoArtService = new UoArtService(settings, mulFileManager); // Instancier UoArtService avec mulFileManager
             UoArtService = uoArtService;
             var mulMapService = new MulMapService(settingsService); // Added mulMapService declaration
             var lightDataService = new LightDataService(settings, uoArtService); // New LightDataService
+            Logger.Log(LogSource.Core, "Services initialized.");
 
             // ViewModels
+            Logger.Log(LogSource.Core, "Initializing view models...");
             var travelTabViewModel = new TravelTabViewModel(travelDataService, mulMapService, settingsService, eventAggregator, locationService, uoClient, scriptParser, scriptParserService);
             var generalTabViewModel = new GeneralTabViewModel(uoClientCommunicator, dialogService);
             var settingsTabViewModel = new SettingsTabViewModel();
             var itemTabViewModel = new ItemTabViewModel(mulFileManager, scriptParser, eventAggregator, uoClient, settingsTabViewModel.SettingsItemTabViewModel, lightDataService, uoArtService, settingsService);
+            
+            Logger.Log(LogSource.Profile, "Loading profiles...");
             var profiles = profileService.LoadProfiles();
             if (profiles.Count == 0)
             {
                 profiles.Add(new Profile { Name = "<Axis Profile>", BaseDirectory = "C:\\Axis2\\Profiles\\Axis", IsDefault = true });
                 profiles.Add(new Profile { Name = "<None>", BaseDirectory = "None" });
                 profileService.SaveProfiles(profiles);
+                Logger.Log(LogSource.Profile, "Created default profiles.");
             }
+            Logger.Log(LogSource.Profile, $"{profiles.Count} profiles loaded.");
+
+            // Determine if a default profile should be loaded
+            var defaultProfile = profiles.FirstOrDefault(p => p.IsDefault);
+            var loadDefaultProfileOnStartup = settings.GeneralSettings.LoadDefaultProfile;
+            bool defaultProfileWasLoaded = false;
+
+            if (loadDefaultProfileOnStartup && defaultProfile != null)
+            {
+                defaultProfileWasLoaded = true;
+            }
+
             var profilesTabViewModel = new ProfilesTabViewModel(profileService, eventAggregator, profiles, null); // Will fix null later
             var accountTabViewModel = new AccountTabViewModel();
             var commandsTabViewModel = new CommandsTabViewModel();
@@ -89,6 +122,7 @@ namespace Axis2.WPF
             var playerTweakTabViewModel = new PlayerTweakTabViewModel();
             var reminderTabViewModel = new ReminderTabViewModel();
             var spawnTabViewModel = new SpawnTabViewModel(mulFileManager, scriptParser, eventAggregator, uoClient, mobTypesService, animationManager, bodyDefService);
+            Logger.Log(LogSource.Core, "View models initialized.");
 
             MainViewModel = new MainViewModel(
                 fileManager, animationManager, bodyDefService,
@@ -102,18 +136,23 @@ namespace Axis2.WPF
                 itemTweakTabViewModel, launcherTabViewModel,
                 logTabViewModel, miscTabViewModel,
                 playerTweakTabViewModel, reminderTabViewModel,
-                spawnTabViewModel);
+                spawnTabViewModel,
+                defaultProfileWasLoaded);
 
             profilesTabViewModel.SetMainViewModel(MainViewModel);
 
-            // Load default profile on startup
-            var defaultProfile = profiles.FirstOrDefault(p => p.IsDefault);
-            
+            // Publish the ProfileLoadedEvent if a default profile should be loaded
+            if (defaultProfileWasLoaded)
+            {
+                Logger.Log(LogSource.Profile, $"Loading default profile '{defaultProfile.Name}' on startup.");
+                eventAggregator.Publish(new ProfileLoadedEvent(defaultProfile));
+            }
 
             var mainWindow = new MainWindow
             {
                 DataContext = MainViewModel
             };
+            Logger.Log(LogSource.UI, "Showing main window.");
             mainWindow.Show();
         }
 
@@ -124,7 +163,7 @@ namespace Axis2.WPF
                 if (!MainViewModel.ItemTweakTabViewModel.CheckAndSavePalette())
                 {
                     // Cannot cancel exit from ExitEventArgs. Log for now.
-                    //Logger.Log("Application exit cancelled by user (palette save).");
+                    Logger.Log(LogSource.Core, "Application exit cancelled by user (palette save).");
                 }
             }
         }

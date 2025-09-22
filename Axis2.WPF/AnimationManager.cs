@@ -159,20 +159,20 @@ namespace Axis2.WPF
         // NOUVELLE M�THODE: D�couvre les actions disponibles pour une animation
         public List<int> GetAvailableActions(uint animationIndex)
         {
-            Logger.Log($"DEBUG: [AnimationManager] GetAvailableActions called for animation {animationIndex}");
+            Logger.Log(LogSource.Animation, $"DEBUG: [AnimationManager] GetAvailableActions called for animation {animationIndex}");
 
             var availableActions = new HashSet<int>();
 
             if (animationIndex >= _m_DataIndex.Length)
             {
-                Logger.Log($"WARNING: [AnimationManager] animationIndex {animationIndex} is out of bounds");
+                Logger.Log(LogSource.Animation, $"WARNING: [AnimationManager] animationIndex {animationIndex} is out of bounds");
                 return new List<int>();
             }
 
             IndexDataAnimation indexAnim = _m_DataIndex[animationIndex];
             if (indexAnim == null)
             {
-                Logger.Log($"WARNING: [AnimationManager] indexAnim is null for animation {animationIndex}");
+                Logger.Log(LogSource.Animation, $"WARNING: [AnimationManager] indexAnim is null for animation {animationIndex}");
                 return new List<int>();
             }
 
@@ -192,7 +192,7 @@ namespace Axis2.WPF
             }
 
             var result = availableActions.OrderBy(x => x).ToList();
-            Logger.Log($"DEBUG: [AnimationManager] Available actions for animation {animationIndex}: [{string.Join(", ", result)}]");
+            Logger.Log(LogSource.Animation, $"Available actions for animation {animationIndex}: [{string.Join(", ", result)}]");
             return result;
         }
 
@@ -201,7 +201,7 @@ namespace Axis2.WPF
         {
             var actions = GetAvailableActions(animationIndex);
             int firstAction = actions.Count > 0 ? actions[0] : -1;
-            Logger.Log($"DEBUG: [AnimationManager] First available action for animation {animationIndex}: {firstAction}");
+            Logger.Log(LogSource.Animation, $"First available action for animation {animationIndex}: {firstAction}");
             return firstAction;
         }
 
@@ -230,20 +230,20 @@ namespace Axis2.WPF
         // M�THODE MODIFI�E: GetUopFrame avec fallback intelligent et coh�rent
         public BitmapSource? GetUopFrame(uint animationIndex, int requestedAction, int direction, int frameIndex)
         {
-            Logger.Log($"DEBUG: [AnimationManager] GetUopFrame called. animationIndex: {animationIndex}, requestedAction: {requestedAction}, direction: {direction}, frameIndex: {frameIndex}");
+            Logger.Log(LogSource.Animation, $"GetUopFrame called. animationIndex: {animationIndex}, requestedAction: {requestedAction}, direction: {direction}, frameIndex: {frameIndex}");
 
             // D�terminer quelle action utiliser r�ellement (avec cache pour la coh�rence)
             int actualAction = GetResolvedAction(animationIndex, requestedAction);
             if (actualAction < 0)
             {
-                Logger.Log($"ERROR: [AnimationManager] No actions available for animation {animationIndex}");
+                Logger.Log(LogSource.Animation, $"ERROR: No actions available for animation {animationIndex}");
                 return null;
             }
 
             // Si l'action r�solue est diff�rente de celle demand�e, l'indiquer
             if (actualAction != requestedAction)
             {
-                Logger.Log($"INFO: [AnimationManager] Using action {actualAction} instead of {requestedAction} for animation {animationIndex}");
+                Logger.Log(LogSource.Animation, $"INFO: Using action {actualAction} instead of {requestedAction} for animation {animationIndex}");
             }
 
             // Essayer de charger la frame avec l'action r�solue
@@ -256,7 +256,7 @@ namespace Axis2.WPF
             // Si la direction demand�e n'existe pas, essayer la direction 0
             if (direction != 0)
             {
-                Logger.Log($"INFO: [AnimationManager] Direction {direction} not found, trying direction 0 for animation {animationIndex}, action {actualAction}");
+                Logger.Log(LogSource.Animation, $"INFO: Direction {direction} not found, trying direction 0 for animation {animationIndex}, action {actualAction}");
                 frame = TryGetUopFrameForAction(animationIndex, actualAction, 0, frameIndex);
                 if (frame != null)
                 {
@@ -264,7 +264,7 @@ namespace Axis2.WPF
                 }
             }
 
-            Logger.Log($"ERROR: [AnimationManager] No animation data found for animation {animationIndex}");
+            Logger.Log(LogSource.Animation, $"ERROR: No animation data found for animation {animationIndex}");
             return null;
         }
 
@@ -285,7 +285,7 @@ namespace Axis2.WPF
             {
                 // L'action demand�e existe, la mettre en cache
                 _resolvedActionCache[animationIndex] = requestedAction;
-                Logger.Log($"DEBUG: [AnimationManager] Action {requestedAction} found for animation {animationIndex}");
+                Logger.Log(LogSource.Animation, $"Action {requestedAction} found for animation {animationIndex}");
                 return requestedAction;
             }
 
@@ -294,11 +294,11 @@ namespace Axis2.WPF
             if (firstAvailableAction >= 0)
             {
                 _resolvedActionCache[animationIndex] = firstAvailableAction;
-                Logger.Log($"DEBUG: [AnimationManager] Action {requestedAction} not found, resolved to action {firstAvailableAction} for animation {animationIndex}");
+                Logger.Log(LogSource.Animation, $"Action {requestedAction} not found, resolved to action {firstAvailableAction} for animation {animationIndex}");
                 return firstAvailableAction;
             }
 
-            Logger.Log($"ERROR: [AnimationManager] No actions available for animation {animationIndex}");
+            Logger.Log(LogSource.Animation, $"ERROR: No actions available for animation {animationIndex}");
             return -1;
         }
 
@@ -323,49 +323,49 @@ namespace Axis2.WPF
                 // Chaque action a 5 groupIndex cons�cutifs (un par direction)
                 // Mais pour r�cup�rer le fichier .bin, on utilise le premier groupIndex de l'action
                 int baseGroupIndex = action * 5; // Premier groupIndex de cette action
-                Logger.Log($"DEBUG: [AnimationManager] TryGetUopFrameForAction: Using baseGroupIndex: {baseGroupIndex} for action {action}");
+                Logger.Log(LogSource.Animation, $"TryGetUopFrameForAction: Using baseGroupIndex: {baseGroupIndex} for action {action}");
 
                 // V�rifier que cette action existe r�ellement
                 IndexDataFileInfo? fileInfo = GetAnimationFrameData(animationIndex, baseGroupIndex, 0);
 
                 if (fileInfo == null)
                 {
-                    Logger.Log($"DEBUG: [AnimationManager] TryGetUopFrameForAction: fileInfo is null for animIndex {animationIndex}, baseGroupIndex {baseGroupIndex}.");
+                    Logger.Log(LogSource.UOP, $"TryGetUopFrameForAction: fileInfo is null for animIndex {animationIndex}, baseGroupIndex {baseGroupIndex}.");
                     return null;
                 }
                 if (fileInfo.File == null)
                 {
-                    Logger.Log($"DEBUG: [AnimationManager] TryGetUopFrameForAction: fileInfo.File is null for animIndex {animationIndex}, baseGroupIndex {baseGroupIndex}.");
+                    Logger.Log(LogSource.UOP, $"TryGetUopFrameForAction: fileInfo.File is null for animIndex {animationIndex}, baseGroupIndex {baseGroupIndex}.");
                     return null;
                 }
                 if (!fileInfo.File.IsLoaded)
                 {
-                    Logger.Log($"DEBUG: [AnimationManager] TryGetUopFrameForAction: fileInfo.File is not loaded for animIndex {animationIndex}, baseGroupIndex {baseGroupIndex}. FilePath: {fileInfo.File.FilePath}");
+                    Logger.Log(LogSource.UOP, $"TryGetUopFrameForAction: fileInfo.File is not loaded for animIndex {animationIndex}, baseGroupIndex {baseGroupIndex}. FilePath: {fileInfo.File.FilePath}");
                     return null;
                 }
 
                 byte[]? binData = fileInfo.File.ReadData(fileInfo.UopHeader);
                 if (binData == null)
                 {
-                    Logger.Log($"DEBUG: [AnimationManager] TryGetUopFrameForAction: binData is null after ReadData for animIndex {animationIndex}, baseGroupIndex {baseGroupIndex}.");
+                    Logger.Log(LogSource.UOP, $"TryGetUopFrameForAction: binData is null after ReadData for animIndex {animationIndex}, baseGroupIndex {baseGroupIndex}.");
                     return null;
                 }
-                Logger.Log($"DEBUG: [AnimationManager] TryGetUopFrameForAction: binData length: {binData.Length} for animIndex {animationIndex}, baseGroupIndex {baseGroupIndex}.");
+                Logger.Log(LogSource.UOP, $"TryGetUopFrameForAction: binData length: {binData.Length} for animIndex {animationIndex}, baseGroupIndex {baseGroupIndex}.");
 
                 // CORRECTION: Maintenant on passe la direction ET le frameIndex � LoadFromUopBin
                 DecodedUopFrame? decodedFrame = AnimationDataLoader.LoadFromUopBin(binData, direction, frameIndex);
                 if (decodedFrame == null)
                 {
-                    Logger.Log($"DEBUG: [AnimationManager] TryGetUopFrameForAction: decodedFrame is null after LoadFromUopBin for animIndex {animationIndex}, action {action}, direction {direction}.");
+                    Logger.Log(LogSource.Animation, $"TryGetUopFrameForAction: decodedFrame is null after LoadFromUopBin for animIndex {animationIndex}, action {action}, direction {direction}.");
                     return null;
                 }
 
-                Logger.Log($"DEBUG: [AnimationManager] Successfully decoded UOP frame for animIndex {animationIndex}, action {action}, direction {direction}, frameIndex {frameIndex}.");
+                Logger.Log(LogSource.Animation, $"Successfully decoded UOP frame for animIndex {animationIndex}, action {action}, direction {direction}, frameIndex {frameIndex}.");
                 return decodedFrame.Image;
             }
             catch (Exception ex)
             {
-                Logger.Log($"ERROR: [AnimationManager] TryGetUopFrameForAction: Exception for animation {animationIndex}, action {action}, direction {direction}: {ex.Message}");
+                Logger.Log(LogSource.Animation, $"ERROR: TryGetUopFrameForAction: Exception for animation {animationIndex}, action {action}, direction {direction}: {ex.Message}");
                 return null;
             }
         }

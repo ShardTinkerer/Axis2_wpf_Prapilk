@@ -111,6 +111,40 @@ namespace Axis2.WPF.Services
                     }
                 }
             }
+
+            // Process DUPELIST and DUPEITEM after all main items are parsed
+            var additionalItems = new List<SObject>();
+            foreach (var obj in items.ToList()) // Iterate over a copy to allow modification of original list
+            {
+                if (!string.IsNullOrEmpty(obj.DupeList))
+                {
+                    var dupeIds = obj.DupeList.Split(',').Select(id => id.Trim()).ToList();
+                    foreach (var dupeId in dupeIds)
+                    {
+                        var dupeObject = obj.Clone() as SObject;
+                        if (dupeObject != null)
+                        {
+                            dupeObject.Id = dupeId; // Set the new ID
+                            dupeObject.DisplayId = dupeId; // Set the new DisplayId
+                            additionalItems.Add(dupeObject);
+                        }
+                    }
+                }
+                else if (!string.IsNullOrEmpty(obj.DupeItem))
+                {
+                    if (DefNameToObjectMap.TryGetValue(obj.DupeItem, out var originalItem))
+                    {
+                        var dupeObject = originalItem.Clone() as SObject;
+                        if (dupeObject != null)
+                        {
+                            dupeObject.Id = obj.Id; // Keep the ID from the DUPEITEM block
+                            dupeObject.DisplayId = obj.Id; // Keep the DisplayId from the DUPEITEM block
+                            additionalItems.Add(dupeObject);
+                        }
+                    }
+                }
+            }
+            items.AddRange(additionalItems);
             return items;
         }
 
@@ -234,6 +268,9 @@ namespace Axis2.WPF.Services
                         break;
                     case "DUPEITEM":
                         item.DupeItem = value;
+                        break;
+                    case "DUPELIST":
+                        item.DupeList = value;
                         break;
                     case "ID":
                         if (item.Type == SObjectType.SpawnGroup)

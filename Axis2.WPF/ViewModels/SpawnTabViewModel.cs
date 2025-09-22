@@ -351,27 +351,42 @@ namespace Axis2.WPF.ViewModels
             {
                 return;
             }
-            _scriptsPath = message.LoadedProfile.BaseDirectory;
-            LoadScripts();
+            LoadScripts(message.LoadedProfile);
         }
 
-        private void LoadScripts()
+        private void LoadScripts(Profile loadedProfile)
         {
             Categories.Clear();
             DisplayedItems.Clear();
             ItemImage = null;
 
-            if (string.IsNullOrEmpty(_scriptsPath) || !Directory.Exists(_scriptsPath))
+            if (loadedProfile == null)
+            {
+                return;
+            }
+
+            var scriptFiles = new List<string>();
+
+            if (!loadedProfile.IsWebProfile && loadedProfile.SelectedScripts != null && loadedProfile.SelectedScripts.Any())
+            {
+                scriptFiles.AddRange(loadedProfile.SelectedScripts.Select(s => s.Path));
+            }
+            else if (!string.IsNullOrEmpty(loadedProfile.BaseDirectory) && Directory.Exists(loadedProfile.BaseDirectory))
+            {
+                scriptFiles.AddRange(Directory.GetFiles(loadedProfile.BaseDirectory, "*.scp", SearchOption.AllDirectories));
+            }
+            else
             {
                 return;
             }
 
             var allItems = new List<SObject>();
-            var scriptFiles = Directory.GetFiles(_scriptsPath, "*.scp", SearchOption.AllDirectories);
-
             foreach (var file in scriptFiles)
             {
-                allItems.AddRange(_scriptParser.ParseFile(file));
+                if (File.Exists(file))
+                {
+                    allItems.AddRange(_scriptParser.ParseFile(file));
+                }
             }
 
             var categorizedItems = _scriptParser.Categorize(allItems.Where(item => item.Type == SObjectType.Npc || item.Type == SObjectType.SpawnGroup).ToList());
@@ -433,24 +448,16 @@ namespace Axis2.WPF.ViewModels
 
             if (itemId > 0)
             {
-                int hue = 0;
-
-                // Vérification du BodyDef pour la redirection d'ID et de couleur
+                // Vérification du BodyDef
                 var bodyDef = _bodyDefService.GetBodyDef((ushort)itemId);
                 if (bodyDef != null)
                 {
-                    Logger.Log($"DEBUG: BodyDef remapped ID {itemId} to {bodyDef.NewId} with Hue {bodyDef.Hue}");
+                    Logger.Log($"DEBUG: BodyDef remapped ID {itemId} to {bodyDef.NewId}");
                     itemId = bodyDef.NewId; // Utiliser le nouvel ID
-                    hue = bodyDef.Hue;      // Utiliser la nouvelle couleur
-                }
-                else if (!string.IsNullOrEmpty(SelectedItem.Color) && SelectedItem.Color.StartsWith("0x"))
-                {
-                    // Si pas de redirection, utiliser la couleur de l'objet SObject
-                    int.TryParse(SelectedItem.Color.Substring(2), System.Globalization.NumberStyles.HexNumber, null, out hue);
                 }
 
                 bool isUop = _mobTypesService.IsUopAnimation((int)itemId);
-                Logger.Log($"DEBUG: UpdateItemImage - isUopAnimation for final itemId {itemId}: {isUop}");
+                Logger.Log($"DEBUG: UpdateItemImage - isUopAnimation for itemId {itemId}: {isUop}");
 
                 if (isUop)
                 {
@@ -462,6 +469,12 @@ namespace Axis2.WPF.ViewModels
                 }
                 else
                 {
+                    int hue = 0;
+                    if (!string.IsNullOrEmpty(SelectedItem.Color) && SelectedItem.Color.StartsWith("0x"))
+                    {
+                        int.TryParse(SelectedItem.Color.Substring(2), System.Globalization.NumberStyles.HexNumber, null, out hue);
+                    }
+
                     int frame = this.Frame;
                     short artType = this.ArtType;
 
@@ -473,7 +486,7 @@ namespace Axis2.WPF.ViewModels
                     else
                     {
                         Logger.Log($"WARNING: UpdateItemImage - GetBodyAnimation returned null for itemId {itemId}");
-                        ItemImage = null;
+                        ItemImage = null; 
                     }
                 }
             }

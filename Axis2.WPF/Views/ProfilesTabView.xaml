@@ -75,7 +75,7 @@
                 <TreeView.Resources>
                     <HierarchicalDataTemplate DataType="{x:Type models:ScriptItem}" ItemsSource="{Binding Children}">
                         <StackPanel Orientation="Horizontal">
-                            <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" VerticalAlignment="Center"/>
+                            <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" VerticalAlignment="Center" IsThreeState="True"/>
                             <TextBlock Text="{Binding Name}" Margin="5,0,0,0"/>
                         </StackPanel>
                     </HierarchicalDataTemplate>
@@ -84,11 +84,11 @@
 
             <!-- Profile Action Buttons -->
             <StackPanel Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
-                <Button Content="Save" Command="{Binding SaveProfileCommand}" Margin="5"/>
-                <Button Content="Cancel" Command="{Binding CancelProfileCommand}" Margin="5"/>
                 <Button Content="Load" Command="{Binding LoadProfileCommand}" Margin="5"/>
+                <Button Content="Save All" Command="{Binding SaveProfileCommand}" Margin="5"/>
+                <Button Content="Cancel" Command="{Binding CancelProfileCommand}" Margin="5"/>
                 <Button Content="Export" Command="{Binding ExportProfileCommand}" Margin="5"/>
-                <Button Content="Save Scripts" Command="{Binding SaveScriptsCommand}" Margin="5"/>
+                <Button Content="Save Selected Scripts" Command="{Binding SaveScriptsCommand}" Margin="5"/>
             </StackPanel>
         </Grid>
 

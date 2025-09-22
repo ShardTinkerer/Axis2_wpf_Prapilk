@@ -20,7 +20,7 @@ namespace Axis2.WPF
 
             if (!uopReader.IsLoaded)
             {
-                Logger.Log("WARNING: UOP file is not loaded.");
+                Logger.Log(LogSource.UOP, "WARNING: UOP file is not loaded.");
                 return new List<int>();
             }
 
@@ -37,14 +37,14 @@ namespace Axis2.WPF
                     if (entry.HasValue)
                     {
                         availableActions.Add(action);
-                        Logger.Log($"DEBUG: Found action {action} for animation {animId}");
+                        Logger.Log(LogSource.Animation, $"DEBUG: Found action {action} for animation {animId}");
                         break; // On a trouvé au moins une direction pour cette action
                     }
                 }
             }
 
             var result = availableActions.OrderBy(x => x).ToList();
-            Logger.Log($"INFO: Animation {animId} has {result.Count} available actions: [{string.Join(", ", result)}]");
+            Logger.Log(LogSource.Animation, $"INFO: Animation {animId} has {result.Count} available actions: [{string.Join(", ", result)}]");
             return result;
         }
 
@@ -66,7 +66,7 @@ namespace Axis2.WPF
 
             if (!uopReader.IsLoaded)
             {
-                Logger.Log("WARNING: UOP file is not loaded.");
+                Logger.Log(LogSource.UOP, "WARNING: UOP file is not loaded.");
                 return availableDirections;
             }
 
@@ -82,7 +82,7 @@ namespace Axis2.WPF
                 }
             }
 
-            Logger.Log($"DEBUG: Animation {animId}, Action {action} has directions: [{string.Join(", ", availableDirections)}]");
+            Logger.Log(LogSource.Animation, $"DEBUG: Animation {animId}, Action {action} has directions: [{string.Join(", ", availableDirections)}]");
             return availableDirections;
         }
 
@@ -93,7 +93,7 @@ namespace Axis2.WPF
         {
             if (!uopReader.IsLoaded)
             {
-                Logger.Log("ERROR: UOP file is not loaded.");
+                Logger.Log(LogSource.UOP, "ERROR: UOP file is not loaded.");
                 return null;
             }
 
@@ -101,17 +101,17 @@ namespace Axis2.WPF
             var frame = TryLoadAnimationFrame(animId, preferredAction, direction, uopReader);
             if (frame != null)
             {
-                Logger.Log($"SUCCESS: Loaded animation {animId}, action {preferredAction}, direction {direction}");
+                Logger.Log(LogSource.Animation, $"SUCCESS: Loaded animation {animId}, action {preferredAction}, direction {direction}");
                 return frame;
             }
 
             // Si l'action préférée n'existe pas, chercher la première disponible
-            Logger.Log($"INFO: Action {preferredAction} not found for animation {animId}, searching for alternatives...");
+            Logger.Log(LogSource.Animation, $"INFO: Action {preferredAction} not found for animation {animId}, searching for alternatives...");
 
             int firstAvailableAction = GetFirstAvailableAction(animId, uopReader);
             if (firstAvailableAction >= 0 && firstAvailableAction != preferredAction)
             {
-                Logger.Log($"INFO: Using action {firstAvailableAction} instead of {preferredAction} for animation {animId}");
+                Logger.Log(LogSource.Animation, $"INFO: Using action {firstAvailableAction} instead of {preferredAction} for animation {animId}");
 
                 frame = TryLoadAnimationFrame(animId, firstAvailableAction, direction, uopReader);
                 if (frame != null)
@@ -124,7 +124,7 @@ namespace Axis2.WPF
                 if (availableDirections.Count > 0)
                 {
                     int firstDirection = availableDirections[0];
-                    Logger.Log($"INFO: Direction {direction} not found, using direction {firstDirection} for animation {animId}, action {firstAvailableAction}");
+                    Logger.Log(LogSource.Animation, $"INFO: Direction {direction} not found, using direction {firstDirection} for animation {animId}, action {firstAvailableAction}");
 
                     frame = TryLoadAnimationFrame(animId, firstAvailableAction, firstDirection, uopReader);
                     if (frame != null)
@@ -134,7 +134,7 @@ namespace Axis2.WPF
                 }
             }
 
-            Logger.Log($"ERROR: No animation data found for animation {animId}");
+            Logger.Log(LogSource.Animation, $"ERROR: No animation data found for animation {animId}");
             return null;
         }
 
@@ -151,14 +151,14 @@ namespace Axis2.WPF
                 var entry = uopReader.GetEntryByHash(hash);
                 if (!entry.HasValue)
                 {
-                    Logger.Log($"DEBUG: No entry found for path: {binPath} (hash: {hash:X16})");
+                    Logger.Log(LogSource.UOP, $"DEBUG: No entry found for path: {binPath} (hash: {hash:X16})");
                     return null;
                 }
 
                 byte[]? binData = uopReader.ReadData(entry.Value);
                 if (binData == null)
                 {
-                    Logger.Log($"WARNING: Failed to read data for {binPath}");
+                    Logger.Log(LogSource.UOP, $"WARNING: Failed to read data for {binPath}");
                     return null;
                 }
 
@@ -166,7 +166,7 @@ namespace Axis2.WPF
             }
             catch (Exception ex)
             {
-                Logger.Log($"ERROR: Exception loading animation {animId}, action {action}, direction {direction}: {ex.Message}");
+                Logger.Log(LogSource.Animation, $"ERROR: Exception loading animation {animId}, action {action}, direction {direction}: {ex.Message}");
                 return null;
             }
         }
@@ -180,11 +180,11 @@ namespace Axis2.WPF
 
             if (!uopReader.IsLoaded)
             {
-                Logger.Log("WARNING: UOP file is not loaded.");
+                Logger.Log(LogSource.UOP, "WARNING: UOP file is not loaded.");
                 return animations;
             }
 
-            Logger.Log("INFO: Discovering all animations in UOP file...");
+            Logger.Log(LogSource.UOP, "INFO: Discovering all animations in UOP file...");
 
             // Parcourir toutes les entrées du fichier UOP
             foreach (var kvp in uopReader.GetAllEntries())
@@ -202,13 +202,13 @@ namespace Axis2.WPF
                         animations[animId] = actions;
                         if (animations.Count % 100 == 0)
                         {
-                            Logger.Log($"INFO: Discovered {animations.Count} animations so far...");
+                            Logger.Log(LogSource.UOP, $"INFO: Discovered {animations.Count} animations so far...");
                         }
                     }
                 }
             }
 
-            Logger.Log($"INFO: Discovery complete. Found {animations.Count} animations total.");
+            Logger.Log(LogSource.UOP, $"INFO: Discovery complete. Found {animations.Count} animations total.");
             return animations;
         }
 
@@ -243,7 +243,7 @@ namespace Axis2.WPF
                     else if (dwArtIndex < 0x190)
                         dwIndex = dwArtIndex * 110;
                     else if (dwArtIndex < 0x258)
-                        dwIndex = (dwArtIndex - 0x258) * 65 + 44000;
+                        dwIndex = (dwArtIndex - 0x190) * 65 + 44000;
                     else
                         dwIndex = (dwArtIndex - 0x258) * 175 + 70000;
                     break;
@@ -266,7 +266,7 @@ namespace Axis2.WPF
                         dwIndex = (dwArtIndex - 0x190) * 175 + 35000;
                     break;
                 default:
-                    Logger.Log($"WARNING: GetNpcAnimationIndex: iMul inconnu: {iMul}. Utilisation de la logique par défaut.");
+                    Logger.Log(LogSource.Animation, $"WARNING: GetNpcAnimationIndex: iMul inconnu: {iMul}. Utilisation de la logique par défaut.");
                     dwIndex = dwArtIndex * 110;
                     break;
             }
@@ -285,11 +285,11 @@ namespace Axis2.WPF
 
         public static DecodedUopFrame? LoadFromUopBin(byte[] binData, int direction, int frameIndex = 0)
         {
-            Logger.Log($"DEBUG: LoadFromUopBin called with binData.Length: {binData?.Length ?? 0}, direction: {direction}, frameIndex: {frameIndex}");
+            Logger.Log(LogSource.UOP, $"DEBUG: LoadFromUopBin called with binData.Length: {binData?.Length ?? 0}, direction: {direction}, frameIndex: {frameIndex}");
 
             if (binData == null || binData.Length == 0)
             {
-                Logger.Log("WARNING: LoadFromUopBin: binData is null or empty.");
+                Logger.Log(LogSource.UOP, "WARNING: LoadFromUopBin: binData is null or empty.");
                 return null;
             }
 
@@ -303,21 +303,21 @@ namespace Axis2.WPF
                 }
                 catch (Exception ex)
                 {
-                    Logger.Log($"ERROR: LoadFromUopBin: Error reading UOP BIN header: {ex.Message}");
+                    Logger.Log(LogSource.UOP, $"ERROR: LoadFromUopBin: Error reading UOP BIN header: {ex.Message}");
                     return null;
                 }
 
-                Logger.Log($"DEBUG: LoadFromUopBin: Header Magic: {header.Magic:X}, Version: {header.Version}, TotalSize: {header.TotalSize}, AnimId: {header.AnimationId}, FrameCount: {header.FrameCount}, FrameIndexOffset: {header.FrameIndexOffset}");
+                Logger.Log(LogSource.UOP, $"DEBUG: LoadFromUopBin: Header Magic: {header.Magic:X}, Version: {header.Version}, TotalSize: {header.TotalSize}, AnimId: {header.AnimationId}, FrameCount: {header.FrameCount}, FrameIndexOffset: {header.FrameIndexOffset}");
 
                 if (header.Magic != 0x554F4D41)
                 {
-                    Logger.Log($"WARNING: LoadFromUopBin: Invalid Magic number: {header.Magic:X}. Expected 0x554F4D41.");
+                    Logger.Log(LogSource.UOP, $"WARNING: LoadFromUopBin: Invalid Magic number: {header.Magic:X}. Expected 0x554F4D41.");
                     return null;
                 }
 
                 if (header.FrameCount == 0)
                 {
-                    Logger.Log("WARNING: LoadFromUopBin: FrameCount is 0.");
+                    Logger.Log(LogSource.UOP, "WARNING: LoadFromUopBin: FrameCount is 0.");
                     return null;
                 }
 
@@ -326,7 +326,7 @@ namespace Axis2.WPF
                 uint framesPerDirection = header.FrameCount / 5;
                 uint frameIndexToLoad = (uint)direction * framesPerDirection + (uint)frameIndex;
 
-                Logger.Log($"DEBUG: LoadFromUopBin: framesPerDirection: {framesPerDirection}, direction: {direction}, frameIndex: {frameIndex}, frameIndexToLoad: {frameIndexToLoad}");
+                Logger.Log(LogSource.Animation, $"DEBUG: LoadFromUopBin: framesPerDirection: {framesPerDirection}, direction: {direction}, frameIndex: {frameIndex}, frameIndexToLoad: {frameIndexToLoad}");
 
                 List<UopFrameIndex> frameIndexEntries;
                 try
@@ -335,23 +335,23 @@ namespace Axis2.WPF
                 }
                 catch (Exception ex)
                 {
-                    Logger.Log($"ERROR: LoadFromUopBin: Error reading frame index: {ex.Message}");
+                    Logger.Log(LogSource.UOP, $"ERROR: LoadFromUopBin: Error reading frame index: {ex.Message}");
                     return null;
                 }
-                Logger.Log($"DEBUG: LoadFromUopBin: Read {frameIndexEntries.Count} frame index entries.");
+                Logger.Log(LogSource.UOP, $"DEBUG: LoadFromUopBin: Read {frameIndexEntries.Count} frame index entries.");
 
                 if (frameIndexToLoad >= frameIndexEntries.Count)
                 {
-                    Logger.Log($"WARNING: LoadFromUopBin: frameIndexToLoad ({frameIndexToLoad}) is out of bounds for frameIndexEntries.Count ({frameIndexEntries.Count}).");
+                    Logger.Log(LogSource.Animation, $"WARNING: LoadFromUopBin: frameIndexToLoad ({frameIndexToLoad}) is out of bounds for frameIndexEntries.Count ({frameIndexEntries.Count}).");
                     return null;
                 }
 
                 UopFrameIndex targetFrameIndex = frameIndexEntries[(int)frameIndexToLoad];
-                Logger.Log($"DEBUG: LoadFromUopBin: TargetFrameIndex - Direction: {targetFrameIndex.Direction}, FrameNumber: {targetFrameIndex.FrameNumber}, StreamPosition: {targetFrameIndex.StreamPosition}, FrameDataOffset: {targetFrameIndex.FrameDataOffset}");
+                Logger.Log(LogSource.Animation, $"DEBUG: LoadFromUopBin: TargetFrameIndex - Direction: {targetFrameIndex.Direction}, FrameNumber: {targetFrameIndex.FrameNumber}, StreamPosition: {targetFrameIndex.StreamPosition}, FrameDataOffset: {targetFrameIndex.FrameDataOffset}");
 
                 long frameDataOffset = targetFrameIndex.StreamPosition + targetFrameIndex.FrameDataOffset;
                 stream.Seek(frameDataOffset, SeekOrigin.Begin);
-                Logger.Log($"DEBUG: LoadFromUopBin: Seeking to frameDataOffset: {frameDataOffset}");
+                Logger.Log(LogSource.Animation, $"DEBUG: LoadFromUopBin: Seeking to frameDataOffset: {frameDataOffset}");
 
                 List<System.Windows.Media.Color> palette;
                 try
@@ -360,10 +360,10 @@ namespace Axis2.WPF
                 }
                 catch (Exception ex)
                 {
-                    Logger.Log($"ERROR: LoadFromUopBin: Error reading palette: {ex.Message}");
+                    Logger.Log(LogSource.Art, $"ERROR: LoadFromUopBin: Error reading palette: {ex.Message}");
                     return null;
                 }
-                Logger.Log($"DEBUG: LoadFromUopBin: Read {palette.Count} palette entries.");
+                Logger.Log(LogSource.Art, $"DEBUG: LoadFromUopBin: Read {palette.Count} palette entries.");
 
                 UopFrameHeader frameHeader;
                 try
@@ -372,14 +372,14 @@ namespace Axis2.WPF
                 }
                 catch (Exception ex)
                 {
-                    Logger.Log($"ERROR: LoadFromUopBin: Error reading frame header: {ex.Message}");
+                    Logger.Log(LogSource.Animation, $"ERROR: LoadFromUopBin: Error reading frame header: {ex.Message}");
                     return null;
                 }
-                Logger.Log($"DEBUG: LoadFromUopBin: FrameHeader - CenterX: {frameHeader.CenterX}, CenterY: {frameHeader.CenterY}, Width: {frameHeader.Width}, Height: {frameHeader.Height}");
+                Logger.Log(LogSource.Animation, $"DEBUG: LoadFromUopBin: FrameHeader - CenterX: {frameHeader.CenterX}, CenterY: {frameHeader.CenterY}, Width: {frameHeader.Width}, Height: {frameHeader.Height}");
 
                 if (frameHeader.Width <= 0 || frameHeader.Height <= 0)
                 {
-                    Logger.Log($"WARNING: LoadFromUopBin: Invalid frame dimensions: Width={frameHeader.Width}, Height={frameHeader.Height}.");
+                    Logger.Log(LogSource.Animation, $"WARNING: LoadFromUopBin: Invalid frame dimensions: Width={frameHeader.Width}, Height={frameHeader.Height}.");
                     return null;
                 }
 
@@ -390,17 +390,17 @@ namespace Axis2.WPF
                 }
                 catch (Exception ex)
                 {
-                    Logger.Log($"ERROR: LoadFromUopBin: Error decoding RLE frame: {ex.Message}");
+                    Logger.Log(LogSource.Animation, $"ERROR: LoadFromUopBin: Error decoding RLE frame: {ex.Message}");
                     return null;
                 }
 
                 if (image == null)
                 {
-                    Logger.Log("WARNING: LoadFromUopBin: DecodeRleFrame returned null.");
+                    Logger.Log(LogSource.Animation, "WARNING: LoadFromUopBin: DecodeRleFrame returned null.");
                     return null;
                 }
 
-                Logger.Log("DEBUG: LoadFromUopBin: Successfully decoded UOP frame.");
+                Logger.Log(LogSource.Animation, "DEBUG: LoadFromUopBin: Successfully decoded UOP frame.");
                 return new DecodedUopFrame { Header = frameHeader, Palette = palette, Image = image };
             }
         }
@@ -468,11 +468,11 @@ namespace Axis2.WPF
 
         private static BitmapSource? DecodeRleFrame(BinaryReader reader, UopFrameHeader frameHeader, List<System.Windows.Media.Color> palette)
         {
-            Logger.Log($"DEBUG: DecodeRleFrame called. Width: {frameHeader.Width}, Height: {frameHeader.Height}");
+            Logger.Log(LogSource.Animation, $"DEBUG: DecodeRleFrame called. Width: {frameHeader.Width}, Height: {frameHeader.Height}");
 
             if (frameHeader.Width <= 0 || frameHeader.Height <= 0)
             {
-                Logger.Log("WARNING: DecodeRleFrame: Invalid frame dimensions (<=0).");
+                Logger.Log(LogSource.Animation, "WARNING: DecodeRleFrame: Invalid frame dimensions (<=0).");
                 return BitmapSource.Create(1, 1, 96, 96, PixelFormats.Bgra32, null, new byte[4], 4);
             }
 
@@ -487,11 +487,11 @@ namespace Axis2.WPF
                 while (reader.BaseStream.Position < reader.BaseStream.Length)
                 {
                     uint rleHeader = reader.ReadUInt32();
-                    Logger.Log($"DEBUG: DecodeRleFrame: Read RLE Header: {rleHeader:X}");
+                    Logger.Log(LogSource.Animation, $"DEBUG: DecodeRleFrame: Read RLE Header: {rleHeader:X}");
 
                     if (rleHeader == 0x7FFF7FFF) // Marqueur de fin
                     {
-                        Logger.Log("DEBUG: DecodeRleFrame: End marker found.");
+                        Logger.Log(LogSource.Animation, "DEBUG: DecodeRleFrame: End marker found.");
                         break;
                     }
 
@@ -499,7 +499,7 @@ namespace Axis2.WPF
                     int y = (int)((rleHeader >> 12) & 0x03FF);
                     int x = (int)((rleHeader >> 22) & 0x03FF);
 
-                    Logger.Log($"DEBUG: DecodeRleFrame: runLength: {runLength}, x: {x}, y: {y}");
+                    Logger.Log(LogSource.Animation, $"DEBUG: DecodeRleFrame: runLength: {runLength}, x: {x}, y: {y}");
 
                     // Gérer les décalages signés pour X et Y (10-bit)
                     if ((x & 0x200) != 0)
@@ -529,7 +529,7 @@ namespace Axis2.WPF
             }
             catch (Exception ex)
             {
-                Logger.Log($"ERROR: DecodeRleFrame: Erreur lors du décodage de la frame RLE: {ex.Message}");
+                Logger.Log(LogSource.Animation, $"ERROR: DecodeRleFrame: Erreur lors du décodage de la frame RLE: {ex.Message}");
                 return null;
             }
 

@@ -213,20 +213,12 @@ namespace Axis2.WPF.Services
         public BitmapSource? GetBodyAnimationFromUop(uint body, int direction, int action, int frame, int hue)
         {
             ushort animId = (ushort)body;
-            // mulFileId est maintenant le groupIndex pour l'AnimationManager
             int groupIndex = 0;
 
-            var bodyConv = _bodyDefService.GetBodyConv(animId);
-            if (bodyConv != null)
-            {
-                animId = bodyConv.NewId;
-                groupIndex = bodyConv.MulFile; // Utilise MulFile comme groupIndex
-            }
-            else
-            {
-                var bodyDef = _bodyDefService.GetBodyDef(animId);
-                if (bodyDef != null) animId = bodyDef.NewId;
-            }
+            // Pour les UOP, on ignore bodyconv.def, on utilise uniquement body.def
+            var bodyDef = _bodyDefService.GetBodyDef(animId);
+            if (bodyDef != null)
+                animId = bodyDef.NewId;
 
             // Obtenir les données de la frame d'animation depuis AnimationManager
            // Logger.Log($"GetBodyAnimationFromUop: Requesting animation data for animId: {animId}, groupIndex: {groupIndex}, direction: {direction}");
@@ -350,24 +342,31 @@ namespace Axis2.WPF.Services
 
         public BitmapSource? GetBodyAnimation(uint body, int direction, int action, int frame, short artType, int hue = 0)
         {
-            ushort animId = (ushort)body;
+            // On reçoit peut-être un ID déjà transformé (comme 80), on doit retrouver l'ID d'origine (302)
+            ushort originalId = _bodyDefService.GetOriginalId((ushort)body);
+            ushort animId = originalId;
             int mulFileId = 0;
 
-            if (_bodyDefService != null)
+            // Maintenant on peut appliquer bodyconv.def correctement
+            var bodyConv = _bodyDefService.GetBodyConv(originalId);
+            if (bodyConv != null)
             {
-                var bodyConv = _bodyDefService.GetBodyConv(animId);
-                if (bodyConv != null)
+                mulFileId = bodyConv.MulFile;
+                // Si l'ID dans bodyconv.def n'est pas -1, on l'utilise
+                if (bodyConv.NewId != 0xFFFF)
                 {
                     animId = bodyConv.NewId;
-                    mulFileId = bodyConv.MulFile;
                 }
-                else
-                {
-                    var bodyDef = _bodyDefService.GetBodyDef(animId);
-                    if (bodyDef != null) animId = bodyDef.NewId;
-                }
+                // Sinon on garde l'ID original pour ce fichier mul
             }
-
+            // On ne consulte body.def que si aucune entrée n'a été trouvée dans bodyconv.def
+            else 
+            {
+                var bodyDef = _bodyDefService.GetBodyDef(originalId);
+                if (bodyDef != null)
+                    animId = bodyDef.NewId;
+            }
+            
             string animBaseDir = Path.GetDirectoryName(_animIdxPath) ?? string.Empty;
             string currentAnimIdxPath = Path.Combine(animBaseDir, $"anim{mulFileId}.idx");
             string currentAnimMulPath = Path.Combine(animBaseDir, $"anim{mulFileId}.mul");
@@ -378,9 +377,23 @@ namespace Axis2.WPF.Services
             }
 
             uint absoluteAnimIdxRecordId;
-            if (animId < 200) absoluteAnimIdxRecordId = (uint)(animId * 110);
-            else if (animId < 400) absoluteAnimIdxRecordId = (200 * 110) + (((uint)animId - 200) * 65);
-            else absoluteAnimIdxRecordId = (200 * 110) + (200 * 65) + (((uint)animId - 400) * 175);
+            if (mulFileId == 3) // Anim3 specific logic
+            {
+                if (animId == 0x5F) // Turkey Fix
+                    absoluteAnimIdxRecordId = 15175;
+                else if (animId < 0x190) // High Details
+                    absoluteAnimIdxRecordId = (uint)(animId * 110);
+                else if (animId < 0x258) // Low Details
+                    absoluteAnimIdxRecordId = (uint)((animId - 0x190) * 65 + 44000);
+                else // Humans - Wearables
+                    absoluteAnimIdxRecordId = (uint)((animId - 0x258) * 175 + 70000);
+            }
+            else
+            {
+                if (animId < 200) absoluteAnimIdxRecordId = (uint)(animId * 110);
+                else if (animId < 400) absoluteAnimIdxRecordId = (200 * 110) + (((uint)animId - 200) * 65);
+                else absoluteAnimIdxRecordId = (200 * 110) + (200 * 65) + (((uint)animId - 400) * 175);
+            }
             absoluteAnimIdxRecordId += (uint)(action * 5 + direction);
 
             var indexRecord = ReadIndexRecord(currentAnimIdxPath, absoluteAnimIdxRecordId);

@@ -631,31 +631,52 @@ namespace Axis2.WPF.ViewModels
                 Logger.Log("ERROR: ItemTabViewModel received a null profile.");
                 return;
             }
-            _scriptsPath = message.LoadedProfile.BaseDirectory;
-            LoadScripts();
+            LoadScripts(message.LoadedProfile);
         }
 
-        private void LoadScripts()
+        private void LoadScripts(Profile loadedProfile)
         {
             Logger.Log("DEBUG: ItemTabViewModel.LoadScripts method entered.");
             Categories.Clear();
             DisplayedItems.Clear();
             ItemImage = null;
 
-            if (string.IsNullOrEmpty(_scriptsPath) || !Directory.Exists(_scriptsPath))
+            if (loadedProfile == null)
             {
-                Logger.Log($"ERROR: ItemTabViewModel - ScriptsPath is null or does not exist: '{_scriptsPath}'.");
+                Logger.Log("ERROR: ItemTabViewModel - LoadScripts received a null profile.");
+                return;
+            }
+
+            var scriptFiles = new List<string>();
+
+            if (!loadedProfile.IsWebProfile && loadedProfile.SelectedScripts != null && loadedProfile.SelectedScripts.Any())
+            {
+                scriptFiles.AddRange(loadedProfile.SelectedScripts.Select(s => s.Path));
+                Logger.Log($"DEBUG: ItemTabViewModel - Loading {scriptFiles.Count} selected script files.");
+            }
+            else if (!string.IsNullOrEmpty(loadedProfile.BaseDirectory) && Directory.Exists(loadedProfile.BaseDirectory))
+            {
+                scriptFiles.AddRange(Directory.GetFiles(loadedProfile.BaseDirectory, "*.scp", SearchOption.AllDirectories));
+                Logger.Log($"DEBUG: ItemTabViewModel - Found {scriptFiles.Count} script files in '{loadedProfile.BaseDirectory}'.");
+            }
+            else
+            {
+                Logger.Log($"ERROR: ItemTabViewModel - No scripts to load. BaseDirectory is '{loadedProfile.BaseDirectory}'.");
                 return;
             }
 
             var allItems = new List<SObject>();
-            var scriptFiles = Directory.GetFiles(_scriptsPath, "*.scp", SearchOption.AllDirectories);
-            Logger.Log($"DEBUG: ItemTabViewModel - Found {scriptFiles.Length} script files in '{_scriptsPath}'.");
-
             foreach (var file in scriptFiles)
             {
-                Logger.Log($"DEBUG: ItemTabViewModel - Parsing file: {file}");
-                allItems.AddRange(_scriptParser.ParseFile(file));
+                if (File.Exists(file))
+                {
+                    Logger.Log($"DEBUG: ItemTabViewModel - Parsing file: {file}");
+                    allItems.AddRange(_scriptParser.ParseFile(file));
+                }
+                else
+                {
+                    Logger.Log($"WARNING: ItemTabViewModel - Script file not found: {file}");
+                }
             }
 
             var itemDefs = allItems.Where(item => item.Type == SObjectType.Item).ToList();
