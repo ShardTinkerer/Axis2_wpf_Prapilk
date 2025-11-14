@@ -383,6 +383,16 @@ namespace Axis2.WPF.ViewModels
                     _settings.FilePathsSettings.HuesMul,
                     _settings.FilePathsSettings.AnimIdx,
                     _settings.FilePathsSettings.AnimMul,
+                    _settings.FilePathsSettings.Anim2Idx,
+                    _settings.FilePathsSettings.Anim2Mul,
+                    _settings.FilePathsSettings.Anim3Idx,
+                    _settings.FilePathsSettings.Anim3Mul,
+                    _settings.FilePathsSettings.Anim4Idx,
+                    _settings.FilePathsSettings.Anim4Mul,
+                    _settings.FilePathsSettings.Anim5Idx,
+                    _settings.FilePathsSettings.Anim5Mul,
+                    _settings.FilePathsSettings.Anim6Idx,
+                    _settings.FilePathsSettings.Anim6Mul,
                     _bodyDefService,
                     _settings.OverridePathsSettings.FilePaths
                 );

@@ -32,6 +32,16 @@ namespace Axis2.WPF.Services
         private string _huesMulPath = string.Empty;
         private string _animIdxPath = string.Empty;
         private string _animMulPath = string.Empty;
+        private string _anim2IdxPath = string.Empty;
+        private string _anim2MulPath = string.Empty;
+        private string _anim3IdxPath = string.Empty;
+        private string _anim3MulPath = string.Empty;
+        private string _anim4IdxPath = string.Empty;
+        private string _anim4MulPath = string.Empty;
+        private string _anim5IdxPath = string.Empty;
+        private string _anim5MulPath = string.Empty;
+        private string _anim6IdxPath = string.Empty;
+        private string _anim6MulPath = string.Empty;
         private BodyDefService _bodyDefService;
         private readonly Dictionary<string, string> _overridePaths;
 
@@ -46,13 +56,23 @@ namespace Axis2.WPF.Services
             _overridePaths = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         }
 
-        public void Load(string artIdxPath, string artMulPath, string huesMulPath, string animIdxPath, string animMulPath, BodyDefService bodyDefService, IEnumerable<FilePathItem> overridePaths)
+        public void Load(string artIdxPath, string artMulPath, string huesMulPath, string animIdxPath, string animMulPath, string anim2IdxPath, string anim2MulPath, string anim3IdxPath, string anim3MulPath, string anim4IdxPath, string anim4MulPath, string anim5IdxPath, string anim5MulPath, string anim6IdxPath, string anim6MulPath, BodyDefService bodyDefService, IEnumerable<FilePathItem> overridePaths)
         {
             _artIdxPath = artIdxPath;
             _artMulPath = artMulPath;
             _huesMulPath = huesMulPath;
             _animIdxPath = animIdxPath;
             _animMulPath = animMulPath;
+            _anim2IdxPath = anim2IdxPath;
+            _anim2MulPath = anim2MulPath;
+            _anim3IdxPath = anim3IdxPath;
+            _anim3MulPath = anim3MulPath;
+            _anim4IdxPath = anim4IdxPath;
+            _anim4MulPath = anim4MulPath;
+            _anim5IdxPath = anim5IdxPath;
+            _anim5MulPath = anim5MulPath;
+            _anim6IdxPath = anim6IdxPath;
+            _anim6MulPath = anim6MulPath;
             _bodyDefService = bodyDefService;
             LoadHues();
 
@@ -367,9 +387,37 @@ namespace Axis2.WPF.Services
                     animId = bodyDef.NewId;
             }
             
-            string animBaseDir = Path.GetDirectoryName(_animIdxPath) ?? string.Empty;
-            string currentAnimIdxPath = Path.Combine(animBaseDir, $"anim{mulFileId}.idx");
-            string currentAnimMulPath = Path.Combine(animBaseDir, $"anim{mulFileId}.mul");
+            string currentAnimIdxPath;
+            string currentAnimMulPath;
+
+            switch (mulFileId)
+            {
+                case 2:
+                    currentAnimIdxPath = _anim2IdxPath;
+                    currentAnimMulPath = _anim2MulPath;
+                    break;
+                case 3:
+                    currentAnimIdxPath = _anim3IdxPath;
+                    currentAnimMulPath = _anim3MulPath;
+                    break;
+                case 4:
+                    currentAnimIdxPath = _anim4IdxPath;
+                    currentAnimMulPath = _anim4MulPath;
+                    break;
+                case 5:
+                    currentAnimIdxPath = _anim5IdxPath;
+                    currentAnimMulPath = _anim5MulPath;
+                    break;
+                case 6:
+                    currentAnimIdxPath = _anim6IdxPath;
+                    currentAnimMulPath = _anim6MulPath;
+                    break;
+                default:
+                    currentAnimIdxPath = _animIdxPath;
+                    currentAnimMulPath = _animMulPath;
+                    break;
+            }
+
             if (!File.Exists(currentAnimIdxPath) || !File.Exists(currentAnimMulPath))
             {
                 currentAnimIdxPath = _animIdxPath;

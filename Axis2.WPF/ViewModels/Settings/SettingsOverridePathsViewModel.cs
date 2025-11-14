@@ -178,6 +178,18 @@ namespace Axis2.WPF.ViewModels.Settings
             FilePaths.Add(new FilePathItem { FileName = "AnimationFrame2.uop", FilePath = baseMulPath + "AnimationFrame2.uop", OriginalFilePath = baseMulPath + "AnimationFrame2.uop" });
             FilePaths.Add(new FilePathItem { FileName = "AnimationFrame3.uop", FilePath = baseMulPath + "AnimationFrame3.uop", OriginalFilePath = baseMulPath + "AnimationFrame3.uop" });
             FilePaths.Add(new FilePathItem { FileName = "AnimationFrame4.uop", FilePath = baseMulPath + "AnimationFrame4.uop", OriginalFilePath = baseMulPath + "AnimationFrame4.uop" });
+            FilePaths.Add(new FilePathItem { FileName = "AnimationFrame5.uop", FilePath = baseMulPath + "AnimationFrame5.uop", OriginalFilePath = baseMulPath + "AnimationFrame5.uop" });
+            FilePaths.Add(new FilePathItem { FileName = "AnimationFrame6.uop", FilePath = baseMulPath + "AnimationFrame6.uop", OriginalFilePath = baseMulPath + "AnimationFrame6.uop" });
+            FilePaths.Add(new FilePathItem { FileName = "anim2.idx", FilePath = baseMulPath + "anim2.idx", OriginalFilePath = baseMulPath + "anim2.idx" });
+            FilePaths.Add(new FilePathItem { FileName = "anim2.mul", FilePath = baseMulPath + "anim2.mul", OriginalFilePath = baseMulPath + "anim2.mul" });
+            FilePaths.Add(new FilePathItem { FileName = "anim3.idx", FilePath = baseMulPath + "anim3.idx", OriginalFilePath = baseMulPath + "anim3.idx" });
+            FilePaths.Add(new FilePathItem { FileName = "anim3.mul", FilePath = baseMulPath + "anim3.mul", OriginalFilePath = baseMulPath + "anim3.mul" });
+            FilePaths.Add(new FilePathItem { FileName = "anim4.idx", FilePath = baseMulPath + "anim4.idx", OriginalFilePath = baseMulPath + "anim4.idx" });
+            FilePaths.Add(new FilePathItem { FileName = "anim4.mul", FilePath = baseMulPath + "anim4.mul", OriginalFilePath = baseMulPath + "anim4.mul" });
+            FilePaths.Add(new FilePathItem { FileName = "anim5.idx", FilePath = baseMulPath + "anim5.idx", OriginalFilePath = baseMulPath + "anim5.idx" });
+            FilePaths.Add(new FilePathItem { FileName = "anim5.mul", FilePath = baseMulPath + "anim5.mul", OriginalFilePath = baseMulPath + "anim5.mul" });
+            FilePaths.Add(new FilePathItem { FileName = "anim6.idx", FilePath = baseMulPath + "anim6.idx", OriginalFilePath = baseMulPath + "anim6.idx" });
+            FilePaths.Add(new FilePathItem { FileName = "anim6.mul", FilePath = baseMulPath + "anim6.mul", OriginalFilePath = baseMulPath + "anim6.mul" });
         }
     }
 }

@@ -5,7 +5,7 @@ namespace Axis2.WPF
         public const int MAX_ANIMATIONS_DATA_INDEX_COUNT = 0x10000; // 65536
         public const int ANIMATION_UOP_GROUPS_COUNT = 52; // Arbitrary, based on typical group counts
         public const int ANIMATION_GROUPS_COUNT = 30; // Arbitrary, based on typical group counts
-        public const int MAX_ANIMATION_FRAME_UOP_FILES = 5; // From C++ IFOR(fileIndex, 1, 5)
+        public const int MAX_ANIMATION_FRAME_UOP_FILES = 7; // From C++ IFOR(fileIndex, 1, 5)
 
         // Item Attributes (placeholders - actual values need to be confirmed from original project)
         public const int ATTR_IDENTIFIED = 0x00001;

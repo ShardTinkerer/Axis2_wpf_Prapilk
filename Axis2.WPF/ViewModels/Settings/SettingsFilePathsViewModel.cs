@@ -25,6 +25,36 @@ namespace Axis2.WPF.ViewModels.Settings
         private string _animMul;
         public string AnimMul { get => _animMul; set => SetProperty(ref _animMul, value); }
 
+        private string _anim2Idx;
+        public string Anim2Idx { get => _anim2Idx; set => SetProperty(ref _anim2Idx, value); }
+
+        private string _anim2Mul;
+        public string Anim2Mul { get => _anim2Mul; set => SetProperty(ref _anim2Mul, value); }
+
+        private string _anim3Idx;
+        public string Anim3Idx { get => _anim3Idx; set => SetProperty(ref _anim3Idx, value); }
+
+        private string _anim3Mul;
+        public string Anim3Mul { get => _anim3Mul; set => SetProperty(ref _anim3Mul, value); }
+
+        private string _anim4Idx;
+        public string Anim4Idx { get => _anim4Idx; set => SetProperty(ref _anim4Idx, value); }
+
+        private string _anim4Mul;
+        public string Anim4Mul { get => _anim4Mul; set => SetProperty(ref _anim4Mul, value); }
+
+        private string _anim5Idx;
+        public string Anim5Idx { get => _anim5Idx; set => SetProperty(ref _anim5Idx, value); }
+
+        private string _anim5Mul;
+        public string Anim5Mul { get => _anim5Mul; set => SetProperty(ref _anim5Mul, value); }
+
+        private string _anim6Idx;
+        public string Anim6Idx { get => _anim6Idx; set => SetProperty(ref _anim6Idx, value); }
+
+        private string _anim6Mul;
+        public string Anim6Mul { get => _anim6Mul; set => SetProperty(ref _anim6Mul, value); }
+
         private string _huesMul;
         public string HuesMul { get => _huesMul; set => SetProperty(ref _huesMul, value); }
 
@@ -112,6 +142,16 @@ namespace Axis2.WPF.ViewModels.Settings
             HuesMul = Path.Combine(mulPath, "hues.mul");
             AnimIdx = Path.Combine(mulPath, "anim.idx");
             AnimMul = Path.Combine(mulPath, "anim.mul");
+            Anim2Idx = Path.Combine(mulPath, "anim2.idx");
+            Anim2Mul = Path.Combine(mulPath, "anim2.mul");
+            Anim3Idx = Path.Combine(mulPath, "anim3.idx");
+            Anim3Mul = Path.Combine(mulPath, "anim3.mul");
+            Anim4Idx = Path.Combine(mulPath, "anim4.idx");
+            Anim4Mul = Path.Combine(mulPath, "anim4.mul");
+            Anim5Idx = Path.Combine(mulPath, "anim5.idx");
+            Anim5Mul = Path.Combine(mulPath, "anim5.mul");
+            Anim6Idx = Path.Combine(mulPath, "anim6.idx");
+            Anim6Mul = Path.Combine(mulPath, "anim6.mul");
 
             // OrionData files
             // string orionDataPath = Path.Combine(mulPath, "OrionData"); // Removed duplicate declaration
